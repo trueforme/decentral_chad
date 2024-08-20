@@ -195,3 +195,4 @@ main_frame.rowconfigure(1, weight=1)
 
 # Запуск основного цикла обработки событий
 root.mainloop()
+#ldsaldsldsadlasdla
