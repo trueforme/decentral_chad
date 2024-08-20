@@ -1,7 +1,9 @@
 import socket
 import json
-class Client():
-    def __init__(self, port,nickname):
+
+
+class Client:
+    def __init__(self, port, nickname):
         self.socket = socket.socket()
         self.port = port
         self.nickname = nickname
@@ -12,15 +14,15 @@ class Client():
         try:
             f = open('clients_data.txt', 'r')
             for line in f.readlines():
-                ip,nick = line.split(': ')
+                ip, nick = line.split(': ')
                 self.client_data[ip] = nick
             f.close()
         except FileNotFoundError:
             f = open('clients_data.txt', 'w')
             f.close()
 
-    def Host(self,max_clients):
-        self.socket.bind(('',self.port))
+    def Host(self, max_clients):
+        self.socket.bind(('', self.port))
         self.socket.listen(max_clients)
         conn, addr = self.socket.accept()
         nick = conn.recv(1024)
@@ -30,18 +32,14 @@ class Client():
         conn.send(data.encode())
 
     def Connect(self):
-        self.socket.connect(('localhost',self.port))
+        self.socket.connect(('localhost', self.port))
         self.socket.send(self.nickname.encode())
         self.client_data = json.loads(self.socket.recv(1024).decode())
         self.Update_clients_data()
 
-
     def Update_clients_data(self):
         lines = []
-        for key,val in self.client_data.items():
+        for key, val in self.client_data.items():
             lines.append(f'{key}: {val}')
-        with open('clients_data.txt','w') as f:
+        with open('clients_data.txt', 'w') as f:
             f.writelines(lines)
-
-
-
