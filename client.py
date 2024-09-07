@@ -16,7 +16,6 @@ class Client():
         print(self.host_socket)
         self.host_socket.listen(self.max_clients)
         self.clients_socket_busy = [False for i in range(self.max_clients)]
-        # self.fill_client_data()
 
     def get_free_socket_index(self):
         index = -1
@@ -27,29 +26,22 @@ class Client():
         return None
 
     def start_session(self,ip, port):
+        pass
+
+    def connect(self,ip, port):
         if ip in self.clients_ip:
             print('уже подключен')
             return
         client_index = self.get_free_socket_index()
         if client_index is None:
-            print('error1')
+            print('максимум подключенных')
+            return
         self.clients_ip[client_index] = ip
-        print('there')
-        self.connect(client_index, port)
-        print("sesion started")
-
-
-    def connect(self,client_index, port):
-        # try:
-            print(client_index,self.clients_ip,port)
-            self.clients_socket[client_index].connect((self.clients_ip[client_index], port))
-            self.clients_socket_busy[client_index] = True
-            self.clients_nick[self.clients_ip[client_index]] = self.clients_socket[client_index].recv(1024).decode()
-            self.clients_socket[client_index].send(self.nickname.encode())
-
-            return True
-        # except:
-        #     return False
+        print(client_index,self.clients_ip,port)
+        self.clients_socket[client_index].connect((self.clients_ip[client_index], port))
+        self.clients_socket_busy[client_index] = True
+        self.clients_nick[self.clients_ip[client_index]] = self.clients_socket[client_index].recv(1024).decode()
+        self.clients_socket[client_index].send(self.nickname.encode())
 
     def accept_connection(self):
         while True:
@@ -66,12 +58,30 @@ class Client():
                     print('уже подключен')
 
 
-    def send_msgH(self,msg,ind):
-        self.clients_socket[ind].send(msg.encode())
+    def send_msg(self,msg,ind):
+        self.clients_socket[ind].send(msg.encode('utf-8'))
         with open(f'{self.clients_ip[ind]}.txt','a+') as f:
             f.write(f'{self.nickname}:{msg}\n')
-    def get_msgH(self,ind):
+    def get_msg(self,msg,ind):
+        with open(f'{self.clients_ip[ind]}.txt','a+') as f:
+            f.write(f'{self.clients_nick[self.clients_ip[ind]]}:{msg}')
+    def send_file(self,file_path,ind):
+        file_name = file_path.split('\\')[-1]
+        self.clients_socket[ind].send(file_name.encode('utf-16'))
+        with open(file_path,'rb') as file:
+            self.clients_socket[ind].sendfile(file)
+    def get_file(self,file_name,ind):
+        file = self.clients_socket[ind].recv(64*8*1024)
+        with open(file_name,'wb') as f:
+            f.write(file)
+    def get_bytes(self,ind):
         while True:
-            msg = self.clients_socket[ind].recv(1024).decode()
-            with open(f'{self.clients_ip[ind]}.txt','a+') as f:
-                f.write(f'{self.clients_nick[self.clients_ip[ind]]}:{msg}')
+            data = self.clients_socket[ind].recv(64*1024*8)
+            try:
+                decoded_data = data.decode('utf-8')
+                self.get_msg(decoded_data,ind)
+            except UnicodeDecodeError:
+                decoded_data = data.decode('utf-16')
+                self.get_file(decoded_data,ind)
+
+
