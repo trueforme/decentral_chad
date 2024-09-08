@@ -23,11 +23,6 @@ class DatabaseWindow:
             )
         ''')
 
-        # Настройка сетки в окне базы данных
-        self.db_window.columnconfigure(0, weight=1)
-        self.db_window.rowconfigure(0, weight=1)
-        self.db_window.rowconfigure(1, weight=0)
-
         # Создаем дерево (Treeview) для отображения данных
         self.columns = ("nickname", "value")
         self.tree = ttk.Treeview(self.db_window, columns=self.columns,
@@ -35,6 +30,20 @@ class DatabaseWindow:
         self.tree.heading("nickname", text="Nickname")
         self.tree.heading("value", text="Value")
         self.tree.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
+
+        # Создаем контекстное меню
+        self.context_menu = tk.Menu(self.db_window, tearoff=0)
+        self.context_menu.add_command(label="Delete",
+                                      command=self.delete_selected_record)
+
+        # Привязываем правый клик мыши к функции открытия контекстного меню
+        self.tree.bind("<Button-3>", self.show_context_menu)
+
+        # Настройка сетки в окне базы данных
+        self.db_window.columnconfigure(0, weight=1)
+        self.db_window.rowconfigure(0, weight=1)
+        self.db_window.rowconfigure(1, weight=0)
+
 
         # Создаем фрейм для ввода данных и кнопки
         self.input_frame = tk.Frame(self.db_window)
@@ -84,11 +93,39 @@ class DatabaseWindow:
         for row in self.get_all_records():
             self.tree.insert('', tk.END, values=row)
 
+    def show_context_menu(self, event):
+        # Проверяем, есть ли выделенная строка
+        selected_item = self.tree.identify_row(event.y)
+        if selected_item:
+            # Выделяем строку при правом клике
+            self.tree.selection_set(selected_item)
+            # Показываем контекстное меню
+            self.context_menu.post(event.x_root, event.y_root)
+        else:
+            # Скрываем меню, если клик не по элементу
+            self.context_menu.unpost()
+
     # Функция для обработки нажатия кнопки Add User (Database Window)
     def on_add_user(self):
         self.open_add_user_window()
 
         # Функция для открытия окна добавления пользователя
+
+    def delete_selected_record(self):
+        # Получаем выделенный элемент в Treeview
+        selected_item = self.tree.selection()[0]
+        if selected_item:
+            # Получаем значение nickname из выделенной строки
+            values = self.tree.item(selected_item, 'values')
+            nickname = values[0]
+
+            # Удаляем запись из базы данных
+            self.cursor.execute('DELETE FROM users WHERE nickname = ?',
+                                (nickname,))
+            self.conn.commit()
+
+            # Удаляем запись из Treeview
+            self.tree.delete(selected_item)
 
     def open_add_user_window(self):
         add_user_window = tk.Toplevel(self.db_window)
