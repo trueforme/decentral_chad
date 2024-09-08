@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk, simpledialog, font, messagebox
+from tkinter import ttk, simpledialog, font, filedialog
 import sqlite3
 import threading
 
@@ -170,10 +170,26 @@ class ChatWindow:
         self.open_db_button = tk.Button(self.main_frame, text="Открыть Database Window", command=self.open_database_window)
         self.open_db_button.grid(row=2, column=1, padx=5, pady=5, sticky="se")
 
+        # Кнопка для добавления файла
+        self.add_file_button = tk.Button(self.input_frame, text="Add File",
+                                         command=self.open_file_dialog)
+        self.add_file_button.grid(row=2, column=0, padx=5, pady=5, sticky="ew")
+
         # Настройка динамического изменения размеров колонок и строк
         self.main_frame.columnconfigure(0, weight=1)
         self.main_frame.columnconfigure(1, weight=0)
         self.main_frame.rowconfigure(1, weight=1)
+
+        # Открытие диалогового окна для выбора файла
+    def open_file_dialog(self):
+        file_path = filedialog.askopenfilename()
+        if file_path:
+            file_name = file_path.split('/')[-1]# Получаем имя файла
+            self.text_area.config(state=tk.NORMAL)
+            self.text_area.insert(tk.END,
+                                  f"{self.nickname or 'You'}: {file_name}\n")
+            self.text_area.config(state=tk.DISABLED)
+            self.input_entry.delete(0, tk.END)
 
     def change_nickname(self):
         new_nickname = simpledialog.askstring("", "новая кликуха:")
@@ -188,6 +204,9 @@ class ChatWindow:
             self.text_area.insert(tk.END, f"{self.nickname or 'You'}: {user_input}\n")
             self.text_area.config(state=tk.DISABLED)
             self.input_entry.delete(0, tk.END)
+
+    def get_text(self):
+        pass
 
     def open_database_window(self):
         DatabaseWindow(self.root)
