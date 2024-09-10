@@ -92,7 +92,7 @@ class DatabaseWindow:
         self.update_treeview()
 
         # Закрываем соединение при закрытии окна
-        self.db_frame.protocol("WM_DELETE_WINDOW", self.on_close)
+        self.root.protocol("WM_DELETE_WINDOW", self.on_close)
 
 
     # Функция для добавления записи в базу данных (Database Window)
@@ -233,7 +233,7 @@ class DatabaseWindow:
 
     def on_close(self):
         self.conn.close()
-        self.db_frame.destroy()
+        self.root.destroy()
 
 
 
