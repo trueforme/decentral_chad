@@ -10,6 +10,7 @@ class Client():
         self.clients_nick = {}
         self.host_socket = socket.socket()
         self.host_socket.bind((socket.gethostbyname(socket.gethostname()),0))
+        print(self.host_socket)
         self.port = self.host_socket.getsockname()[1]
         self.host_socket.listen(self.max_clients)
         self.clients_socket_busy = [False for i in range(self.max_clients)]
@@ -37,10 +38,11 @@ class Client():
             return
         self.clients_ip[client_index] = ip
         print(client_index,self.clients_ip,port)
-        self.clients_socket[client_index].connect((self.clients_ip[client_index], port))
+        self.clients_socket[client_index].connect((ip, port))
+        print('tut')
         self.clients_socket_busy[client_index] = True
-        self.clients_nick[self.clients_ip[client_index]] = self.clients_socket[client_index].recv(1024).decode()
-        self.clients_socket[client_index].send(self.nickname.encode())
+        # self.clients_nick[self.clients_ip[client_index]] = self.clients_socket[client_index].recv(1024).decode()
+        # self.clients_socket[client_index].send(self.nickname.encode())
 
     def accept_connection(self):
         while True:
@@ -59,9 +61,7 @@ class Client():
             else:
                 break
 
-    def thread_on_recv_msg(self,ind):
-        self.threads[ind] = threading.Thread(target=self.get_bytes(),args=[ind])
-        self.threads[ind].start()
+
     def delete_client(self,ind):
         self.clients_ip[ind] = ''
         self.threads[ind] = threading.Thread()
@@ -73,11 +73,12 @@ class Sender():
     def __init__(self,socket,my_nick):
         self.my_nick = my_nick
         self.socket = socket
-        self.reciver = threading.Thread()
+        self.reciver = threading.Thread(target=self.get_bytes)
+        self.reciver.start()
         self.recived_msgs = []
     def send_msg(self,msg):
         # try:
-            self.socket.sendall((f'{self.my_ncik}: ' + msg).encode('utf-8'))
+            self.socket.sendall((f'{self.my_nick}: ' + msg).encode('utf-8'))
         # except ConnectionResetError:
         #     self.delete_client()
     def get_msg(self,msg):

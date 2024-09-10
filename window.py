@@ -137,7 +137,7 @@ class DatabaseWindow:
             self.context_menu.unpost()
 
     def open_chat_window(self,ip,socket):
-        ChatWindow(self.root)
+        ChatWindow(self.root,ip,socket)
 
     # Функция для обработки нажатия кнопки Add User (Database Window)
     def on_add_user(self):
@@ -150,18 +150,18 @@ class DatabaseWindow:
         new_window = tk.Toplevel(self.root)
         new_window.title("Новое окно")
 
-        label = tk.Label(new_window, text="meowmeow_meowmeow")
+        label = tk.Label(new_window, text="ожидание")
         label.pack(padx=20, pady=20)
-        try:
-            data_coded = self.tree.selection()[0]
-            ip = self.tree.item(data_coded, "values")[1]
-            port = self.tree.item(data_coded, "values")[2]
-            self.client.connect(ip,port)
-            self.open_chat_window(ip,self.client.clients_socket[self.client.get_ind_by_ip(ip)])
-        except ConnectionRefusedError:
-            label.config(text='не удалось подключиться')
-        except:
-            label.config(text='неккоректные данные')
+        # try:
+        data_coded = self.tree.selection()[0]
+        ip = self.tree.item(data_coded, "values")[1]
+        port = self.tree.item(data_coded, "values")[2]
+        self.client.connect(ip,int(port))
+        self.open_chat_window(ip,self.client.clients_socket[self.client.get_ind_by_ip(ip)])
+        # except ConnectionRefusedError:
+        #     label.config(text='не удалось подключиться')
+        # except:
+        #     label.config(text='неккоректные данные')
 
 
 
@@ -333,8 +333,6 @@ class ChatWindow:
         self.main_frame.columnconfigure(1, weight=0)
         self.main_frame.rowconfigure(1, weight=1)
 
-        # Открытие диалогового окна для выбора файла
-        self.set_nickname(nickname)
 
     def open_file_dialog(self):
         file_path = filedialog.askopenfilename()
