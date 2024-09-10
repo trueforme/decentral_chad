@@ -53,7 +53,7 @@ class Client():
                     self.clients_ip[index] = addr
                     self.clients_socket[index] = conn
                     self.clients_socket_busy[index] = True
-                    self.clients_socket[index].send(self.nickname.encode())
+                    # self.clients_socket[index].send(self.nickname.encode())
                     self.clients_nick[self.clients_ip[index]] = self.clients_socket[index].recv(1024).decode()
                     self.connected.append((addr,conn))
                 else:
