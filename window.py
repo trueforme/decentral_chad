@@ -18,6 +18,7 @@ class DatabaseWindow:
         self.checker = threading.Thread(target=self.client.accept_connection)
         self.checker.start()
         self.checkerR = threading.Thread(target=self.check_connections)
+        self.checkerR.start()
 
         # Создаем новое окно для базы данных
         self.db_frame = tk.Frame(self.root)
