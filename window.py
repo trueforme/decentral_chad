@@ -15,8 +15,8 @@ class DatabaseWindow:
         self.nickname = nickname
 
         # Создаем новое окно для базы данных
-        self.db_window = tk.Toplevel(self.root)
-        self.db_window.title("Database Window")
+        self.db_frame = tk.Frame(self.root)
+        self.db_frame.pack(fill=tk.BOTH, expand=True)
 
         # Создаем таблицу с полями nickname, ip и port
         self.cursor.execute('''
@@ -29,7 +29,7 @@ class DatabaseWindow:
 
         # Создаем дерево (Treeview) для отображения данных
         self.columns = ("nickname", "value", "another_value")
-        self.tree = ttk.Treeview(self.db_window, columns=self.columns,
+        self.tree = ttk.Treeview(self.db_frame, columns=self.columns,
                                  show="headings")
         self.tree.column("another_value", width=75)
         self.tree.column("value", width=100)
@@ -42,7 +42,7 @@ class DatabaseWindow:
         self.tree.tag_configure('oddrow', background='white')
 
         # Создаем контекстное меню
-        self.context_menu = tk.Menu(self.db_window, tearoff=0)
+        self.context_menu = tk.Menu(self.db_frame, tearoff=0)
         self.context_menu.add_command(label="Connect",
                                       command=self.connect_to_user)
         self.context_menu.add_command(label="Delete",
@@ -52,12 +52,12 @@ class DatabaseWindow:
         self.tree.bind("<Button-3>", self.show_context_menu)
 
         # Настройка сетки в окне базы данных
-        self.db_window.columnconfigure(0, weight=1)
-        self.db_window.rowconfigure(0, weight=1)
-        self.db_window.rowconfigure(1, weight=0)
+        self.db_frame.columnconfigure(0, weight=1)
+        self.db_frame.rowconfigure(0, weight=1)
+        self.db_frame.rowconfigure(1, weight=0)
 
         # Создаем фрейм для ввода данных и кнопки
-        self.input_frame = tk.Frame(self.db_window)
+        self.input_frame = tk.Frame(self.db_frame)
         self.input_frame.grid(row=1, column=0, padx=10, pady=10, sticky="ew")
 
         # Поле для отображения никнейма
@@ -70,18 +70,19 @@ class DatabaseWindow:
         self.input_frame.columnconfigure(2, weight=0)
 
         # Кнопка для добавления пользователя
-        self.refresh_button = tk.Button(self.db_window, text="Add user",
+        self.refresh_button = tk.Button(self.db_frame, text="Add user",
                                         command=self.on_add_user, width=10)
         self.refresh_button.grid(row=2, column=0, padx=10, pady=10, sticky="e")
 
         # Кнопка для обновления данных
-        self.refresh_button = tk.Button(self.db_window, text="Refresh Data",
+        self.refresh_button = tk.Button(self.db_frame, text="Refresh Data",
                                         command=self.update_treeview, width=10)
         self.refresh_button.grid(row=2, column=0, padx=10, pady=10, sticky="w")
 
         # Кнопка для изменения никнейма, расположенная близко к метке
         self.change_nickname_button = tk.Button(self.input_frame,
                                                 text="Изменить", width=10,
+                                                command=self.open_chat_window
                                                 )
         self.change_nickname_button.grid(row=0, column=2, padx=0, pady=0,
                                          sticky="e")
@@ -91,7 +92,7 @@ class DatabaseWindow:
         self.update_treeview()
 
         # Закрываем соединение при закрытии окна
-        self.db_window.protocol("WM_DELETE_WINDOW", self.on_close)
+        self.db_frame.protocol("WM_DELETE_WINDOW", self.on_close)
 
 
     # Функция для добавления записи в базу данных (Database Window)
@@ -131,6 +132,9 @@ class DatabaseWindow:
             # Скрываем меню, если клик не по элементу
             self.context_menu.unpost()
 
+    def open_chat_window(self):
+        ChatWindow(self.root)
+
     # Функция для обработки нажатия кнопки Add User (Database Window)
     def on_add_user(self):
         self.open_add_user_window()
@@ -139,10 +143,15 @@ class DatabaseWindow:
 
     # это кнопка Connect
     def connect_to_user(self):
+        data_coded = self.tree.selection()[0]
+
+        ip = self.tree.item(data_coded, "values")[1]
+        port = self.tree.item(data_coded, "values")[2]
+
         new_window = tk.Toplevel(self.root)
         new_window.title("Новое окно")
 
-        label = tk.Label(new_window, text="Здравствуйте")
+        label = tk.Label(new_window, text="meowmeow_meowmeow")
         label.pack(padx=20, pady=20)
 
     def delete_selected_record(self):
@@ -162,7 +171,7 @@ class DatabaseWindow:
             self.tree.delete(selected_item)
 
     def open_add_user_window(self):
-        add_user_window = tk.Toplevel(self.db_window)
+        add_user_window = tk.Toplevel(self.db_frame)
         add_user_window.title("Add User")
 
         # Поле для ввода никнейма
@@ -209,14 +218,14 @@ class DatabaseWindow:
 
     def center_window(self, window, width, height):
         # Получаем размеры окна родителя (DatabaseWindow)
-        db_window_width = self.db_window.winfo_width()
-        db_window_height = self.db_window.winfo_height()
-        db_window_x = self.db_window.winfo_x()
-        db_window_y = self.db_window.winfo_y()
+        db_frame_width = self.db_frame.winfo_width()
+        db_frame_height = self.db_frame.winfo_height()
+        db_frame_x = self.db_frame.winfo_x()
+        db_frame_y = self.db_frame.winfo_y()
 
         # Вычисляем координаты для центрирования окна Add User
-        pos_x = db_window_x + (db_window_width // 2) - (width // 2)
-        pos_y = db_window_y + (db_window_height // 2) - (height // 2)
+        pos_x = db_frame_x + (db_frame_width // 2) - (width // 2)
+        pos_y = db_frame_y + (db_frame_height // 2) - (height // 2)
 
         # Задаем размер и положение окна
         window.geometry(f'{width}x{height}+{pos_x}+{pos_y}')
@@ -224,7 +233,7 @@ class DatabaseWindow:
 
     def on_close(self):
         self.conn.close()
-        self.db_window.destroy()
+        self.db_frame.destroy()
 
 
 
@@ -236,8 +245,7 @@ class ChatWindow:
         self.root.resizable(False, True)
 
         # Настраиваем основную рамку
-        self.main_frame = tk.Frame(self.root)
-        self.main_frame.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
+        self.main_frame = tk.Toplevel(self.root)
 
         # Создаем текстовую область для Chat Window
         self.text_area = tk.Text(self.main_frame, wrap=tk.WORD, height=15,
@@ -281,11 +289,11 @@ class ChatWindow:
                                      command=self.send_text)
         self.send_button.grid(row=0, column=1, padx=5, pady=5)
 
-        # Кнопка для открытия Database Window
-        self.open_db_button = tk.Button(self.main_frame,
-                                        text="Открыть Database Window",
-                                        command=self.open_database_window)
-        self.open_db_button.grid(row=2, column=1, padx=5, pady=5, sticky="se")
+        # # Кнопка для открытия Database Window
+        # self.open_db_button = tk.Button(self.main_frame,
+        #                                 text="Открыть Database Window",
+        #                                 command=self.open_database_window)
+        # self.open_db_button.grid(row=2, column=1, padx=5, pady=5, sticky="se")
 
         # Кнопка для добавления файла
         self.add_file_button = tk.Button(self.input_frame, text="Add File",
@@ -333,8 +341,6 @@ class ChatWindow:
     def get_text(self):
         pass
 
-    def open_database_window(self):
-        DatabaseWindow(self.root)
 
 
 class WelcomeWindow:
@@ -370,7 +376,7 @@ class WelcomeWindow:
 
     def open_chat_window(self):
         self.root.destroy()  # Закрываем окно приветствия
-        ChatWindow(tk.Tk())  # Открываем окно чата
+        DatabaseWindow(tk.Tk())  # Открываем окно чата
 
 
 # Создаем основное окно
