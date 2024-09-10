@@ -1,19 +1,16 @@
 import socket
-import json
 import threading
 class Client():
-    def __init__(self, port,nickname, max_clients=1):
-        self.port = int(port)
+    def __init__(self, max_clients=5):
+
         self.max_clients = max_clients
-        self.nickname = nickname
         self.clients_ip = ['' for i in range(self.max_clients)]
         self.clients_socket = [socket.socket() for i in range(self.max_clients)]
-        self.threds = [threading.Thread() for i in range(self.max_clients)]
-        print(self.clients_socket[0])
+        self.threads = [threading.Thread() for i in range(self.max_clients)]
         self.clients_nick = {}
         self.host_socket = socket.socket()
-        self.host_socket.bind(('192.168.0.102',self.port))
-        print(self.host_socket)
+        self.host_socket.bind((socket.gethostbyname(socket.gethostname()),0))
+        self.port = self.host_socket.getsockname()[1]
         self.host_socket.listen(self.max_clients)
         self.clients_socket_busy = [False for i in range(self.max_clients)]
 
@@ -24,9 +21,6 @@ class Client():
             if not is_busy:
                 return index
         return None
-
-    def start_session(self,ip, port):
-        pass
 
     def connect(self,ip, port):
         if ip in self.clients_ip:
@@ -56,20 +50,35 @@ class Client():
                     self.clients_nick[self.clients_ip[index]] = self.clients_socket[index].recv(1024).decode()
                 else:
                     print('уже подключен')
+            else:
+                break
 
+    def thread_on_recv_msg(self,ind):
+        self.threads[ind] = threading.Thread(target=self.get_bytes(),args=[ind])
+        self.threads[ind].start()
+    def delete_client(self,ind):
+        self.clients_ip[ind] = ''
+        self.threads[ind] = threading.Thread()
+        self.clients_socket[ind].close()
+        self.clients_socket[ind] = socket.socket()
+        self.clients_socket_busy[ind] = False
 
     def send_msg(self,msg,ind):
-        self.clients_socket[ind].send(msg.encode('utf-8'))
-        with open(f'{self.clients_ip[ind]}.txt','a+') as f:
-            f.write(f'{self.nickname}:{msg}\n')
+        try:
+            self.clients_socket[ind].sendall(msg.encode('utf-8'))
+        except ConnectionResetError:
+            self.delete_client(ind)
     def get_msg(self,msg,ind):
         with open(f'{self.clients_ip[ind]}.txt','a+') as f:
             f.write(f'{self.clients_nick[self.clients_ip[ind]]}:{msg}')
     def send_file(self,file_path,ind):
-        file_name = file_path.split('\\')[-1]
-        self.clients_socket[ind].send(file_name.encode('utf-16'))
-        with open(file_path,'rb') as file:
-            self.clients_socket[ind].sendfile(file)
+        try:
+            file_name = file_path.split('\\')[-1]
+            self.clients_socket[ind].send(file_name.encode('utf-16'))
+            with open(file_path,'rb') as file:
+                self.clients_socket[ind].sendall(file.read())
+        except ConnectionResetError:
+            self.delete_client(ind)
     def get_file(self,file_name,ind):
         file = self.clients_socket[ind].recv(64*8*1024)
         with open(file_name,'wb') as f:
@@ -83,5 +92,3 @@ class Client():
             except UnicodeDecodeError:
                 decoded_data = data.decode('utf-16')
                 self.get_file(decoded_data,ind)
-
-
