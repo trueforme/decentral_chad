@@ -3,36 +3,48 @@ from tkinter import ttk, simpledialog, font, filedialog
 import sqlite3
 import threading
 
+nickname = ''
+
 
 # Класс для Database Window
 class DatabaseWindow:
     def __init__(self, root):
         self.root = root
-        self.conn = sqlite3.connect('simple_database.db')
+        self.conn = sqlite3.connect('nick_ip_port.db')
         self.cursor = self.conn.cursor()
+        self.nickname = nickname
 
         # Создаем новое окно для базы данных
         self.db_window = tk.Toplevel(self.root)
         self.db_window.title("Database Window")
 
-        # Создаем таблицу, если она еще не существует
+        # Создаем таблицу с полями nickname, ip и port
         self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS users (
                 nickname TEXT PRIMARY KEY,
-                value TEXT
+                ip TEXT,
+                port TEXT
             )
         ''')
 
         # Создаем дерево (Treeview) для отображения данных
-        self.columns = ("nickname", "value")
+        self.columns = ("nickname", "value", "another_value")
         self.tree = ttk.Treeview(self.db_window, columns=self.columns,
                                  show="headings")
-        self.tree.heading("nickname", text="Nickname")
-        self.tree.heading("value", text="Value")
+        self.tree.column("another_value", width=75)
+        self.tree.column("value", width=100)
+        self.tree.column("nickname", width=150)
+        self.tree.heading("nickname", text="Nickname", anchor='w')
+        self.tree.heading("value", text="ip", anchor='w')
+        self.tree.heading("another_value", text="port", anchor='w')
         self.tree.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
+        self.tree.tag_configure('evenrow', background='lightgrey')
+        self.tree.tag_configure('oddrow', background='white')
 
         # Создаем контекстное меню
         self.context_menu = tk.Menu(self.db_window, tearoff=0)
+        self.context_menu.add_command(label="Connect",
+                                      command=self.connect_to_user)
         self.context_menu.add_command(label="Delete",
                                       command=self.delete_selected_record)
 
@@ -44,27 +56,36 @@ class DatabaseWindow:
         self.db_window.rowconfigure(0, weight=1)
         self.db_window.rowconfigure(1, weight=0)
 
-
         # Создаем фрейм для ввода данных и кнопки
         self.input_frame = tk.Frame(self.db_window)
         self.input_frame.grid(row=1, column=0, padx=10, pady=10, sticky="ew")
 
+        # Поле для отображения никнейма
+        self.nickname_label = tk.Label(self.input_frame,
+                                       text=f"Ваш ник: {self.nickname}")
+        self.nickname_label.grid(row=0, column=0, padx=5, pady=5, sticky="w")
         # Настраиваем динамическое изменение размера колонок
         self.input_frame.columnconfigure(0, weight=1)
         self.input_frame.columnconfigure(1, weight=1)
         self.input_frame.columnconfigure(2, weight=0)
 
         # Кнопка для добавления пользователя
-        self.add_user_button = tk.Button(self.input_frame, text="Add User",
-                                         command=self.on_add_user)
-        self.add_user_button.grid(row=0, column=2, rowspan=2, padx=5, pady=5,
-                                  sticky="ns")
+        self.refresh_button = tk.Button(self.db_window, text="Add user",
+                                        command=self.on_add_user, width=10)
+        self.refresh_button.grid(row=2, column=0, padx=10, pady=10, sticky="e")
 
         # Кнопка для обновления данных
         self.refresh_button = tk.Button(self.db_window, text="Refresh Data",
-                                        command=self.update_treeview)
-        self.refresh_button.grid(row=2, column=0, padx=10, pady=10,
-                                 sticky="ew")
+                                        command=self.update_treeview, width=10)
+        self.refresh_button.grid(row=2, column=0, padx=10, pady=10, sticky="w")
+
+        # Кнопка для изменения никнейма, расположенная близко к метке
+        self.change_nickname_button = tk.Button(self.input_frame,
+                                                text="Изменить", width=10,
+                                                )
+        self.change_nickname_button.grid(row=0, column=2, padx=0, pady=0,
+                                         sticky="e")
+
 
         # Заполнение дерева начальными данными
         self.update_treeview()
@@ -72,12 +93,13 @@ class DatabaseWindow:
         # Закрываем соединение при закрытии окна
         self.db_window.protocol("WM_DELETE_WINDOW", self.on_close)
 
+
     # Функция для добавления записи в базу данных (Database Window)
-    def add_record(self, nickname, value):
+    def add_record(self, nickname, ip, port):
         self.cursor.execute('''
-            INSERT OR REPLACE INTO users (nickname, value)
-            VALUES (?, ?)
-        ''', (nickname, value))
+            INSERT OR REPLACE INTO users (nickname, ip,port)
+            VALUES (?, ?,? )
+        ''', (nickname, ip, port))
         self.conn.commit()
         self.update_treeview()
 
@@ -88,10 +110,14 @@ class DatabaseWindow:
 
     # Функция для обновления отображения данных в Treeview (Database Window)
     def update_treeview(self):
+        global nickname
         for row in self.tree.get_children():
             self.tree.delete(row)
-        for row in self.get_all_records():
-            self.tree.insert('', tk.END, values=row)
+        for index, row in enumerate(self.get_all_records()):
+            tag = 'evenrow' if index % 2 == 0 else 'oddrow'
+            self.tree.insert('', tk.END, values=row, tags=(tag,))
+        self.nickname_label.config(text=f"Ваш ник: {nickname}")
+
 
     def show_context_menu(self, event):
         # Проверяем, есть ли выделенная строка
@@ -110,6 +136,14 @@ class DatabaseWindow:
         self.open_add_user_window()
 
         # Функция для открытия окна добавления пользователя
+
+    # это кнопка Connect
+    def connect_to_user(self):
+        new_window = tk.Toplevel(self.root)
+        new_window.title("Новое окно")
+
+        label = tk.Label(new_window, text="Здравствуйте")
+        label.pack(padx=20, pady=20)
 
     def delete_selected_record(self):
         # Получаем выделенный элемент в Treeview
@@ -138,30 +172,37 @@ class DatabaseWindow:
         nickname_entry.grid(row=0, column=1, padx=5, pady=5)
 
         # Поле для ввода значения
-        tk.Label(add_user_window, text="Value:").grid(row=1, column=0,
-                                                      padx=5, pady=5)
-        value_entry = tk.Entry(add_user_window)
-        value_entry.grid(row=1, column=1, padx=5, pady=5)
+        tk.Label(add_user_window, text="Ip:").grid(row=1, column=0,
+                                                   padx=5, pady=5)
+        ip_entry = tk.Entry(add_user_window)
+        ip_entry.grid(row=1, column=1, padx=5, pady=5)
+
+        # помогите ЛОООООООЛЛЛЛЛЛЛЛЛЛЛЛЛЛЛЛЛЛ
+        tk.Label(add_user_window, text="Port").grid(row=2, column=0,
+                                                    padx=5, pady=5)
+        port_entry = tk.Entry(add_user_window)
+        port_entry.grid(row=2, column=1, padx=5, pady=5)
 
         # Кнопка "OK"
         ok_button = tk.Button(add_user_window, text="OK",
                               command=lambda: self.add_user(
-                                  nickname_entry.get(), value_entry.get(),
+                                  nickname_entry.get(), ip_entry.get(),
+                                  port_entry.get(),
                                   add_user_window))
-        ok_button.grid(row=2, column=0, padx=5, pady=5)
+        ok_button.grid(row=3, column=0, padx=5, pady=0)
 
         # Кнопка "Cancel"
         cancel_button = tk.Button(add_user_window, text="Cancel",
                                   command=add_user_window.destroy)
-        cancel_button.grid(row=2, column=1, padx=5, pady=5)
+        cancel_button.grid(row=3, column=1, padx=5, pady=5)
 
         # Центрирование окна Add User относительно Database Window
-        self.center_window(add_user_window, 210, 100)
+        self.center_window(add_user_window, 210, 130)
 
     # Функция для добавления пользователя
-    def add_user(self, nickname, value, window):
-        if nickname and value:
-            self.add_record(nickname, value)
+    def add_user(self, nickname, ip, port, window):
+        if nickname and ip and port:
+            self.add_record(nickname, ip, port)
             window.destroy()
 
     # Закрытие окна и соединения с базой данных
@@ -186,11 +227,13 @@ class DatabaseWindow:
         self.db_window.destroy()
 
 
+
 # Класс для Chat Window
 class ChatWindow:
     def __init__(self, root):
         self.root = root
-        self.nickname = ""  # Изначально никнейм не задан
+        self.nickname = nickname  # Изначально никнейм не задан
+        self.root.resizable(False, True)
 
         # Настраиваем основную рамку
         self.main_frame = tk.Frame(self.root)
@@ -215,13 +258,15 @@ class ChatWindow:
         # Метка для отображения текущего никнейма
         self.nickname_label = tk.Label(self.nickname_frame,
                                        text="Ваш никнейм: ")
-        self.nickname_label.grid(row=0, column=0, sticky="e")
+        self.nickname_label.grid(row=0, column=0, padx=5, pady=5, sticky="w")
+
 
         # Кнопка для изменения никнейма
         self.change_nickname_button = tk.Button(self.nickname_frame,
                                                 text="Изменить ник",
                                                 command=self.change_nickname)
-        self.change_nickname_button.grid(row=0, column=1, sticky="e", padx=5)
+        self.change_nickname_button.grid(row=0, column=1, padx=5, pady=5, sticky="e")
+
 
         # Фрейм для ввода текста и кнопки отправки
         self.input_frame = tk.Frame(self.main_frame)
@@ -253,6 +298,7 @@ class ChatWindow:
         self.main_frame.rowconfigure(1, weight=1)
 
         # Открытие диалогового окна для выбора файла
+        self.set_nickname(nickname)
 
     def open_file_dialog(self):
         file_path = filedialog.askopenfilename()
@@ -263,9 +309,15 @@ class ChatWindow:
     def change_nickname(self):
         new_nickname = simpledialog.askstring("", "new nickname:")
         if new_nickname:
-            self.nickname = new_nickname.strip()
-            self.nickname_label.config(text=f"Ваш никнейм: {self.nickname}")
+            self.set_nickname(new_nickname)
 
+    def set_nickname(self, new_nickname):
+        global nickname
+        nickname = new_nickname
+        self.nickname = new_nickname.strip()
+        self.nickname_label.config(text=f"Ваш никнейм: {self.nickname}")
+
+    # пишешь епта в строку
     def send_text(self):
         user_input = self.input_entry.get()
         if user_input:
@@ -285,13 +337,47 @@ class ChatWindow:
         DatabaseWindow(self.root)
 
 
+class WelcomeWindow:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Welcome Window")
+
+        # Создаем метку с текстом "Здравствуйте!"
+        self.label = tk.Label(self.root, text="Здравствуйте!",
+                              font=("Arial", 16))
+        self.label.pack(pady=20)
+
+        # Поле для ввода текста (никнейм)
+        self.nickname_entry = tk.Entry(self.root)
+        self.nickname_entry.pack(pady=10)
+        self.nickname_entry.bind("<KeyRelease>",
+                                 self.check_entry)  # Привязка к событию
+
+        # Кнопка "Здравствуйте", пока не активна
+        self.greet_button = tk.Button(self.root, text="Здравствуйте",
+                                      state=tk.DISABLED,
+                                      command=self.open_chat_window)
+        self.greet_button.pack(pady=10)
+
+    # Функция проверки поля ввода
+    def check_entry(self, event):
+        global nickname
+        nickname = self.nickname_entry.get().strip()  # Получаем значение и убираем пробелы
+        if nickname:  # Если никнейм не пустой
+            self.greet_button.config(state=tk.NORMAL)
+        else:
+            self.greet_button.config(state=tk.DISABLED)
+
+    def open_chat_window(self):
+        self.root.destroy()  # Закрываем окно приветствия
+        ChatWindow(tk.Tk())  # Открываем окно чата
+
+
 # Создаем основное окно
 root = tk.Tk()
-root.title("Chat Window")
-root.resizable(False, True)
 
-# Создаем экземпляр окна чата
-chat_window = ChatWindow(root)
+# Создаем экземпляр окна приветствия
+welcome_window = WelcomeWindow(root)
 
 # Запуск основного цикла обработки событий
 root.mainloop()
