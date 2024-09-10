@@ -13,7 +13,12 @@ class Client():
         self.port = self.host_socket.getsockname()[1]
         self.host_socket.listen(self.max_clients)
         self.clients_socket_busy = [False for i in range(self.max_clients)]
+        self.connected = []
 
+    def get_ind_by_ip(self,ip):
+        for ind in range(self.max_clients):
+            if self.clients_ip[ind] == ip:
+                return ind
     def get_free_socket_index(self):
         index = -1
         for is_busy in self.clients_socket_busy:
@@ -48,6 +53,7 @@ class Client():
                     self.clients_socket_busy[index] = True
                     self.clients_socket[index].send(self.nickname.encode())
                     self.clients_nick[self.clients_ip[index]] = self.clients_socket[index].recv(1024).decode()
+                    self.connected.append((addr,conn))
                 else:
                     print('уже подключен')
             else:
@@ -63,32 +69,37 @@ class Client():
         self.clients_socket[ind] = socket.socket()
         self.clients_socket_busy[ind] = False
 
-    def send_msg(self,msg,ind):
-        try:
-            self.clients_socket[ind].sendall(msg.encode('utf-8'))
-        except ConnectionResetError:
-            self.delete_client(ind)
-    def get_msg(self,msg,ind):
-        with open(f'{self.clients_ip[ind]}.txt','a+') as f:
-            f.write(f'{self.clients_nick[self.clients_ip[ind]]}:{msg}')
-    def send_file(self,file_path,ind):
-        try:
+class Sender():
+    def __init__(self,socket,my_nick):
+        self.my_nick = my_nick
+        self.socket = socket
+        self.reciver = threading.Thread()
+        self.recived_msgs = []
+    def send_msg(self,msg):
+        # try:
+            self.socket.sendall((f'{self.my_ncik}: ' + msg).encode('utf-8'))
+        # except ConnectionResetError:
+        #     self.delete_client()
+    def get_msg(self,msg):
+        self.recived_msgs.append(msg)
+    def send_file(self,file_path):
+        # try:
             file_name = file_path.split('\\')[-1]
-            self.clients_socket[ind].send(file_name.encode('utf-16'))
+            self.socket.send(file_name.encode('utf-16'))
             with open(file_path,'rb') as file:
-                self.clients_socket[ind].sendall(file.read())
-        except ConnectionResetError:
-            self.delete_client(ind)
-    def get_file(self,file_name,ind):
-        file = self.clients_socket[ind].recv(64*8*1024)
+                self.socket.sendall(file.read())
+        # except ConnectionResetError:
+        #     self.delete_client()
+    def get_file(self,file_name):
+        file = self.socket.recv(1024*8*1024)
         with open(file_name,'wb') as f:
             f.write(file)
-    def get_bytes(self,ind):
+    def get_bytes(self):
         while True:
-            data = self.clients_socket[ind].recv(64*1024*8)
+            data = self.socket.recv(1024*1024*8)
             try:
                 decoded_data = data.decode('utf-8')
-                self.get_msg(decoded_data,ind)
+                self.get_msg(decoded_data)
             except UnicodeDecodeError:
                 decoded_data = data.decode('utf-16')
-                self.get_file(decoded_data,ind)
+                self.get_file(decoded_data)
