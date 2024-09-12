@@ -253,6 +253,7 @@ class DatabaseWindow:
         new_nickname = simpledialog.askstring("", "new nickname:")
         if new_nickname:
             self.set_nickname(new_nickname)
+        self.update_treeview()
 
     def set_nickname(self, new_nickname):
         global nickname
@@ -291,6 +292,9 @@ class ChatWindow:
         self.input_entry = tk.Entry(self.input_frame, width=40)
         self.input_entry.grid(row=0, column=0, padx=5, pady=5, sticky="ew")
 
+        # Привязка события Enter к текстовому полю
+        self.input_entry.bind("<Return>", self.send_text_with_event)
+
         # Кнопка для отправки текста
         self.send_button = tk.Button(self.input_frame, text="Отправить",
                                      command=self.send_text)
@@ -320,6 +324,10 @@ class ChatWindow:
         if user_input:
             self.sender.send_msg(user_input)
             self.display_text(user_input, 'YOU')
+
+    # Обработчик, который передает вызов send_text
+    def send_text_with_event(self, event):
+        self.send_text()
 
     def display_text(self, text, nickname = ''):
         self.text_area.config(state=tk.NORMAL)
