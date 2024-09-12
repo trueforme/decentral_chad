@@ -160,8 +160,8 @@ class DatabaseWindow:
             data_coded = self.tree.selection()[0]
             ip = self.tree.item(data_coded, "values")[1]
             port = self.tree.item(data_coded, "values")[2]
-            self.client.connect(ip,int(port))
-            self.open_chat_window(ip,self.client.clients_socket[self.client.get_ind_by_ip(ip)])
+            if self.client.connect(ip,int(port)):
+                self.open_chat_window(ip,self.client.clients_socket[self.client.get_ind_by_ip(ip)])
             new_window.destroy()
         except TimeoutError:
             label.config(text='не удалось подключиться')
@@ -315,8 +315,9 @@ class ChatWindow:
     def open_file_dialog(self):
         file_path = filedialog.askopenfilename()
         if file_path:
-            file_name = file_path.split('/')[-1]  # Получаем имя файла
-            self.display_text(file_name, self.nickname)
+            self.sender.send_file(file_path)
+            # file_name = file_path.split('/')[-1]  # Получаем имя файла
+            # self.display_text(file_name, self.nickname)
 
     # пишешь епта в строку
     def send_text(self):
@@ -384,8 +385,8 @@ while True:
     if len(welcome_window.client.connected):
             ip, socket = welcome_window.client.connected.pop(0)
             welcome_window.open_chat_window(ip,socket)
-    for ip, msgs in welcome_window.msgs.values():
-        while len(msgs):
-            welcome_window.chat_windows[ip].display_text(msgs.pop(0))
+    for ip, chat_window in welcome_window.chat_windows.items():
+        while len(chat_window.sender.recived_msgs):
+            welcome_window.chat_windows[ip].display_text(chat_window.sender.recived_msgs.pop(0))
 
 

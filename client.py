@@ -31,11 +31,11 @@ class Client():
     def connect(self,ip, port):
         if ip in self.clients_ip:
             print('уже подключен')
-            return
+            return False
         client_index = self.get_free_socket_index()
         if client_index is None:
             print('максимум подключенных')
-            return
+            return False
         self.clients_ip[client_index] = ip
         print(client_index,self.clients_ip,port)
         self.clients_socket[client_index].connect((ip, port))
@@ -43,6 +43,7 @@ class Client():
         self.clients_socket_busy[client_index] = True
         # self.clients_nick[self.clients_ip[client_index]] = self.clients_socket[client_index].recv(1024).decode()
         # self.clients_socket[client_index].send(self.nickname.encode())
+        return True
 
     def accept_connection(self):
         while True:
@@ -50,7 +51,7 @@ class Client():
             if index is not None:
                 conn, addr = self.host_socket.accept()
                 if addr not in self.clients_ip:
-                    self.clients_ip[index] = addr
+                    self.clients_ip[index] = addr[0]
                     self.clients_socket[index] = conn
                     self.clients_socket_busy[index] = True
                     # self.clients_socket[index].send(self.nickname.encode())
@@ -85,7 +86,7 @@ class Sender():
         self.recived_msgs.append(msg)
     def send_file(self,file_path):
         # try:
-            file_name = file_path.split('\\')[-1]
+            file_name = file_path.split('/')[-1]
             self.socket.send(file_name.encode('utf-16'))
             with open(file_path,'rb') as file:
                 self.socket.sendall(file.read())
