@@ -5,16 +5,22 @@ root = tkinter.Tk()
 
 main_window = win.DatabaseWindow(root)
 
-while True:
-    root.update()
+while main_window.running:
+    try:
+        root.update()
+    except KeyboardInterrupt:
+        pass
     if len(main_window.client.connected):
-            ip, socket = main_window.client.connected.pop(0)
-            main_window.open_chat_window(ip[0], socket)
+        ip, socket = main_window.client.connected.pop(0)
+        main_window.open_chat_window(ip[0], socket)
     for ip, chat_window in main_window.chat_windows.items():
         if chat_window.sender.non_active:
-            chat_window.display_exit_text(main_window.client.clients_nick[ip])
+            chat_window.display_exit_text('k')
             del main_window.chat_windows[ip]
             main_window.client.delete_client(ip)
         while len(chat_window.sender.recived_msgs):
-            main_window.chat_windows[ip].display_text(chat_window.sender.recived_msgs.pop(0))
+            main_window.chat_windows[ip].display_text(
+                chat_window.sender.recived_msgs.pop(0))
 
+main_window.client.close_all_sockets()
+exit()

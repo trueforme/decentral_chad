@@ -10,6 +10,7 @@ nickname = ''
 # Класс для Database Window
 class DatabaseWindow:
     def __init__(self, root):
+        self.running = True
         self.root = root
         self.conn = sqlite3.connect('nick_ip_port.db')
         self.cursor = self.conn.cursor()
@@ -92,13 +93,11 @@ class DatabaseWindow:
         self.change_nickname_button.grid(row=0, column=2, padx=0, pady=0,
                                          sticky="e")
 
-
         # Заполнение дерева начальными данными
         self.update_treeview()
 
         # Закрываем соединение при закрытии окна
         self.root.protocol("WM_DELETE_WINDOW", self.on_close)
-
 
     # Функция для добавления записи в базу данных (Database Window)
     def add_record(self, nickname, ip, port):
@@ -124,7 +123,6 @@ class DatabaseWindow:
             self.tree.insert('', tk.END, values=row, tags=(tag,))
         self.nickname_label.config(text=f"Ваш ник: {nickname}")
 
-
     def show_context_menu(self, event):
         # Проверяем, есть ли выделенная строка
         selected_item = self.tree.identify_row(event.y)
@@ -137,8 +135,8 @@ class DatabaseWindow:
             # Скрываем меню, если клик не по элементу
             self.context_menu.unpost()
 
-    def open_chat_window(self,ip,socket):
-        chat_window = ChatWindow(self.root,socket)
+    def open_chat_window(self, ip, socket):
+        chat_window = ChatWindow(self.root, socket)
         self.chat_windows[ip] = chat_window
 
     # Функция для обработки нажатия кнопки Add User (Database Window)
@@ -158,15 +156,14 @@ class DatabaseWindow:
             data_coded = self.tree.selection()[0]
             ip = self.tree.item(data_coded, "values")[1]
             port = self.tree.item(data_coded, "values")[2]
-            if self.client.connect(ip,int(port)):
-                self.open_chat_window(ip,self.client.clients_socket[self.client.get_ind_by_ip(ip)])
+            if self.client.connect(ip, int(port)):
+                self.open_chat_window(ip, self.client.clients_socket[
+                    self.client.get_ind_by_ip(ip)])
             new_window.destroy()
         except TimeoutError:
             label.config(text='не удалось подключиться')
         except:
             label.config(text='неккоректные данные')
-
-
 
     def delete_selected_record(self):
         # Получаем выделенный элемент в Treeview
@@ -248,6 +245,7 @@ class DatabaseWindow:
     def on_close(self):
         self.conn.close()
         self.root.destroy()
+        self.running = False
 
     def change_nickname(self):
         new_nickname = simpledialog.askstring("", "new nickname:")
@@ -262,11 +260,12 @@ class DatabaseWindow:
     def on_closing(self):
         self.root.destroy()
 
+
 # Класс для Chat Window
 class ChatWindow:
-    def __init__(self, root,socket):
+    def __init__(self, root, socket):
         self.root = root
-        self.sender = client.Sender(socket,nickname)
+        self.sender = client.Sender(socket, nickname)
         self.nickname = nickname  # Изначально никнейм не задан
         self.root.resizable(False, True)
 
@@ -310,7 +309,6 @@ class ChatWindow:
         self.main_frame.columnconfigure(1, weight=0)
         self.main_frame.rowconfigure(1, weight=1)
 
-
     def open_file_dialog(self):
         file_path = filedialog.askopenfilename()
         if file_path:
@@ -329,16 +327,17 @@ class ChatWindow:
     def send_text_with_event(self, event):
         self.send_text()
 
-    def display_text(self, text, nickname = ''):
+    def display_text(self, text, nickname=''):
         self.text_area.config(state=tk.NORMAL)
         if nickname:
             self.text_area.insert(tk.END,
-                              f"{nickname}: {text}\n")
+                                  f"{nickname}: {text}\n")
         else:
-            self.text_area.insert(tk.END,f"{text}\n")
+            self.text_area.insert(tk.END, f"{text}\n")
         self.text_area.config(state=tk.DISABLED)
         self.input_entry.delete(0, tk.END)
-    def display_exit_text(self,nick):
+
+    def display_exit_text(self, nick):
         self.text_area.config(state=tk.NORMAL)
         self.text_area.insert(f'{nick} покинул чат')
         self.text_area.config(state=tk.DISABLED)
