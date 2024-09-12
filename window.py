@@ -261,6 +261,7 @@ class DatabaseWindow:
         self.root.destroy()
 
 
+
 # Класс для Chat Window
 class ChatWindow:
     def __init__(self, root, socket):
