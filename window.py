@@ -17,8 +17,8 @@ class DatabaseWindow:
         self.client = client.Client()
         self.checker = threading.Thread(target=self.client.accept_connection)
         self.checker.start()
-        self.checkerR = threading.Thread(target=self.check_connections)
-        self.checkerR.start()
+        self.chat_windows = {}
+        self.msgs = {}
 
         # Создаем новое окно для базы данных
         self.db_frame = tk.Frame(self.root)
@@ -139,7 +139,9 @@ class DatabaseWindow:
             self.context_menu.unpost()
 
     def open_chat_window(self,ip,socket):
-        ChatWindow(self.root,ip,socket)
+        chat_window = ChatWindow(self.root,socket)
+        self.chat_windows[ip] = chat_window
+        self.msgs[ip] = []
 
     # Функция для обработки нажатия кнопки Add User (Database Window)
     def on_add_user(self):
@@ -154,16 +156,17 @@ class DatabaseWindow:
 
         label = tk.Label(new_window, text="ожидание")
         label.pack(padx=20, pady=20)
-        # try:
-        data_coded = self.tree.selection()[0]
-        ip = self.tree.item(data_coded, "values")[1]
-        port = self.tree.item(data_coded, "values")[2]
-        self.client.connect(ip,int(port))
-        self.open_chat_window(ip,self.client.clients_socket[self.client.get_ind_by_ip(ip)])
-        # except ConnectionRefusedError:
-        #     label.config(text='не удалось подключиться')
-        # except:
-        #     label.config(text='неккоректные данные')
+        try:
+            data_coded = self.tree.selection()[0]
+            ip = self.tree.item(data_coded, "values")[1]
+            port = self.tree.item(data_coded, "values")[2]
+            self.client.connect(ip,int(port))
+            self.open_chat_window(ip,self.client.clients_socket[self.client.get_ind_by_ip(ip)])
+            new_window.destroy()
+        except TimeoutError:
+            label.config(text='не удалось подключиться')
+        except:
+            label.config(text='неккоректные данные')
 
 
 
@@ -257,22 +260,19 @@ class DatabaseWindow:
         global nickname
         nickname = new_nickname
 
-    def check_connections(self):
-        while True:
-            if len(self.client.connected):
-                ip, socket = self.client.connected.pop(0)
-                self.open_chat_window(ip,socket)
+    # def check_connections(self):
+    #     while True:
+    #         if len(self.client.connected):
+    #             ip, socket = self.client.connected.pop(0)
+    #             self.open_chat_window(ip,socket)
 
 # Класс для Chat Window
 class ChatWindow:
-    def __init__(self, root,ip,socket):
+    def __init__(self, root,socket):
         self.root = root
-        self.ip = ip
         self.sender = client.Sender(socket,nickname)
         self.nickname = nickname  # Изначально никнейм не задан
         self.root.resizable(False, True)
-        self.checker = threading.Thread(target=self.check_new_msgs)
-        self.checker.start()
 
         # Настраиваем основную рамку
         self.main_frame = tk.Toplevel(self.root)
@@ -288,24 +288,6 @@ class ChatWindow:
         self.bold_font = font.Font(weight="bold", size=9, family='Courier')
         self.text_area.tag_configure("bold", font=self.bold_font)
 
-        # # Фрейм для никнейма и кнопки изменения никнейма
-        # self.nickname_frame = tk.Frame(self.main_frame)
-        # self.nickname_frame.grid(row=0, column=0, columnspan=2, sticky="e",
-        #                          padx=5, pady=5)
-        #
-        # # Метка для отображения текущего никнейма
-        # self.nickname_label = tk.Label(self.nickname_frame,
-        #                                text="Ваш никнейм: ")
-        # self.nickname_label.grid(row=0, column=0, padx=5, pady=5, sticky="w")
-        #
-        #
-        # # Кнопка для изменения никнейма
-        # self.change_nickname_button = tk.Button(self.nickname_frame,
-        #                                         text="Изменить ник",
-        #                                         command=self.change_nickname)
-        # self.change_nickname_button.grid(row=0, column=1, padx=5, pady=5, sticky="e")
-
-
         # Фрейм для ввода текста и кнопки отправки
         self.input_frame = tk.Frame(self.main_frame)
         self.input_frame.grid(row=2, column=0, padx=5, pady=5, sticky="ew")
@@ -318,12 +300,6 @@ class ChatWindow:
         self.send_button = tk.Button(self.input_frame, text="Отправить",
                                      command=self.send_text)
         self.send_button.grid(row=0, column=1, padx=5, pady=5)
-
-        # # Кнопка для открытия Database Window
-        # self.open_db_button = tk.Button(self.main_frame,
-        #                                 text="Открыть Database Window",
-        #                                 command=self.open_database_window)
-        # self.open_db_button.grid(row=2, column=1, padx=5, pady=5, sticky="se")
 
         # Кнопка для добавления файла
         self.add_file_button = tk.Button(self.input_frame, text="Add File",
@@ -349,7 +325,7 @@ class ChatWindow:
             self.sender.send_msg(user_input)
             self.display_text(user_input, 'YOU')
 
-    def display_text(self, text, nickname):
+    def display_text(self, text, nickname = ''):
         self.text_area.config(state=tk.NORMAL)
         if nickname:
             self.text_area.insert(tk.END,
@@ -358,12 +334,6 @@ class ChatWindow:
             self.text_area.insert(tk.END,f"{text}\n")
         self.text_area.config(state=tk.DISABLED)
         self.input_entry.delete(0, tk.END)
-
-    def check_new_msgs(self):
-        while True:
-            if len(self.sender.recived_msgs):
-                text = self.sender.recived_msgs.pop(0)
-                self.display_text(text,'')
 
 
 class WelcomeWindow:
@@ -406,7 +376,16 @@ class WelcomeWindow:
 root = tk.Tk()
 
 # Создаем экземпляр окна приветствия
-welcome_window = WelcomeWindow(root)
+welcome_window = DatabaseWindow(root)
 
 # Запуск основного цикла обработки событий
-root.mainloop()
+while True:
+    root.update()
+    if len(welcome_window.client.connected):
+            ip, socket = welcome_window.client.connected.pop(0)
+            welcome_window.open_chat_window(ip,socket)
+    for ip, msgs in welcome_window.msgs.values():
+        while len(msgs):
+            welcome_window.chat_windows[ip].display_text(msgs.pop(0))
+
+

@@ -9,7 +9,7 @@ class Client():
         self.threads = [threading.Thread() for i in range(self.max_clients)]
         self.clients_nick = {}
         self.host_socket = socket.socket()
-        self.host_socket.bind((socket.gethostbyname(socket.gethostname()),0))
+        self.host_socket.bind((socket.gethostbyname(socket.gethostname()),20201))
         print(self.host_socket)
         self.port = self.host_socket.getsockname()[1]
         self.host_socket.listen(self.max_clients)
@@ -54,7 +54,7 @@ class Client():
                     self.clients_socket[index] = conn
                     self.clients_socket_busy[index] = True
                     # self.clients_socket[index].send(self.nickname.encode())
-                    self.clients_nick[self.clients_ip[index]] = self.clients_socket[index].recv(1024).decode()
+                    # self.clients_nick[self.clients_ip[index]] = self.clients_socket[index].recv(1024).decode()
                     self.connected.append((addr,conn))
                 else:
                     print('уже подключен')
