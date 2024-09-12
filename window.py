@@ -18,7 +18,6 @@ class DatabaseWindow:
         self.checker = threading.Thread(target=self.client.accept_connection)
         self.checker.start()
         self.chat_windows = {}
-        self.msgs = {}
 
         # Создаем новое окно для базы данных
         self.db_frame = tk.Frame(self.root)
@@ -260,6 +259,9 @@ class DatabaseWindow:
         global nickname
         nickname = new_nickname
 
+    def on_closing(self):
+        self.root.destroy()
+
     # def check_connections(self):
     #     while True:
     #         if len(self.client.connected):
@@ -335,6 +337,11 @@ class ChatWindow:
             self.text_area.insert(tk.END,f"{text}\n")
         self.text_area.config(state=tk.DISABLED)
         self.input_entry.delete(0, tk.END)
+    def display_exit_text(self,nick):
+        self.text_area.config(state=tk.NORMAL)
+        self.text_area.insert(f'{nick} покинул чат')
+        self.text_area.config(state=tk.DISABLED)
+        self.input_entry.delete(0, tk.END)
 
 
 class WelcomeWindow:
@@ -371,22 +378,3 @@ class WelcomeWindow:
     def open_chat_window(self):
         self.root.destroy()  # Закрываем окно приветствия
         DatabaseWindow(tk.Tk())  # Открываем окно чата
-
-
-# Создаем основное окно
-root = tk.Tk()
-
-# Создаем экземпляр окна приветствия
-welcome_window = DatabaseWindow(root)
-
-# Запуск основного цикла обработки событий
-while True:
-    root.update()
-    if len(welcome_window.client.connected):
-            ip, socket = welcome_window.client.connected.pop(0)
-            welcome_window.open_chat_window(ip,socket)
-    for ip, chat_window in welcome_window.chat_windows.items():
-        while len(chat_window.sender.recived_msgs):
-            welcome_window.chat_windows[ip].display_text(chat_window.sender.recived_msgs.pop(0))
-
-
