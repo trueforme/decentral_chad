@@ -14,7 +14,7 @@ class DatabaseWindow:
         self.conn = sqlite3.connect('nick_ip_port.db')
         self.cursor = self.conn.cursor()
         self.nickname = nickname
-        self.client = client.Client()
+        self.client = client.Client(nickname)
         self.checker = threading.Thread(target=self.client.accept_connection)
         self.checker.start()
         self.chat_windows = {}
@@ -140,7 +140,6 @@ class DatabaseWindow:
     def open_chat_window(self,ip,socket):
         chat_window = ChatWindow(self.root,socket)
         self.chat_windows[ip] = chat_window
-        self.msgs[ip] = []
 
     # Функция для обработки нажатия кнопки Add User (Database Window)
     def on_add_user(self):
@@ -261,12 +260,6 @@ class DatabaseWindow:
 
     def on_closing(self):
         self.root.destroy()
-
-    # def check_connections(self):
-    #     while True:
-    #         if len(self.client.connected):
-    #             ip, socket = self.client.connected.pop(0)
-    #             self.open_chat_window(ip,socket)
 
 # Класс для Chat Window
 class ChatWindow:

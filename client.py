@@ -1,8 +1,8 @@
 import socket
 import threading
 class Client():
-    def __init__(self, max_clients=5):
-
+    def __init__(self, nick, max_clients=5):
+        self.nickname = nick
         self.max_clients = max_clients
         self.clients_ip = ['' for i in range(self.max_clients)]
         self.clients_socket = [socket.socket() for i in range(self.max_clients)]
@@ -40,8 +40,8 @@ class Client():
         self.clients_socket[client_index].connect((ip, port))
         print('tut')
         self.clients_socket_busy[client_index] = True
-        # self.clients_nick[self.clients_ip[client_index]] = self.clients_socket[client_index].recv(1024).decode()
-        # self.clients_socket[client_index].send(self.nickname.encode())
+        self.clients_nick[self.clients_ip[client_index]] = self.clients_socket[client_index].recv(1024).decode()
+        self.clients_socket[client_index].send(self.nickname.encode())
         return True
 
     def accept_connection(self):
@@ -53,8 +53,8 @@ class Client():
                     self.clients_ip[index] = addr[0]
                     self.clients_socket[index] = conn
                     self.clients_socket_busy[index] = True
-                    # self.clients_socket[index].send(self.nickname.encode())
-                    # self.clients_nick[self.clients_ip[index]] = self.clients_socket[index].recv(1024).decode()
+                    self.clients_socket[index].send(self.nickname.encode())
+                    self.clients_nick[self.clients_ip[index]] = self.clients_socket[index].recv(1024).decode()
                     self.connected.append((addr,conn))
                 else:
                     print('уже подключен')
@@ -65,7 +65,6 @@ class Client():
     def delete_client(self,ip):
         ind = self.get_ind_by_ip(ip)
         self.clients_ip[ind] = ''
-        self.threads[ind] = threading.Thread()
         self.clients_socket[ind].close()
         self.clients_socket[ind] = socket.socket()
         self.clients_socket_busy[ind] = False
