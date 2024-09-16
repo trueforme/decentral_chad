@@ -3,7 +3,7 @@ import tkinter as tk
 from tkinter import ttk, simpledialog, font, filedialog
 import sqlite3
 import client
-
+import time
 nickname = ''
 
 
@@ -262,10 +262,12 @@ class DatabaseWindow:
 
 
 
+
 # Класс для Chat Window
 class ChatWindow:
     def __init__(self, root, socket):
         self.root = root
+        self.running = True
         self.sender = client.Sender(socket, nickname)
         self.nickname = nickname  # Изначально никнейм не задан
         self.root.resizable(False, True)
@@ -344,6 +346,20 @@ class ChatWindow:
         self.text_area.config(state=tk.DISABLED)
         self.input_entry.delete(0, tk.END)
 
+    def receive_messages(self):
+        while self.running:
+            try:
+                # Получаем сообщение от сервера
+                message = self.sender.recived_msgs()
+                if message:
+                    # Используем self.root.after для безопасного обновления интерфейса из потока
+                    self.root.after(0, self.display_text, message)
+                time.sleep(0.1)
+            except Exception as e:
+                print(f"Error receiving message: {e}")
+                self.running = False
+                break
+
 
 class WelcomeWindow:
     def __init__(self, root):
@@ -376,6 +392,7 @@ class WelcomeWindow:
         else:
             self.greet_button.config(state=tk.DISABLED)
 
-    def open_chat_window(self):
-        self.root.destroy()  # Закрываем окно приветствия
-        DatabaseWindow(tk.Tk())  # Открываем окно чата
+
+    # def open_chat_window(self):
+    #     self.root.destroy()  # Закрываем окно приветствия
+    #     DatabaseWindow(tk.Tk())  # Открываем окно чата
