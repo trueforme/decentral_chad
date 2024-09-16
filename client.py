@@ -11,11 +11,9 @@ class Client():
         self.clients_ip = ['' for _ in range(self.max_clients)]
         self.clients_socket = [socket.socket() for _ in
                                range(self.max_clients)]
-        for _ in self.clients_socket:
-            _.settimeout(1)
         self.clients_nick = {}
         self.host_socket = socket.socket()
-        self.host_socket.settimeout(15)
+        self.host_socket.settimeout(0.5)
         print(self.host_socket)
         self.host_socket.bind(
             (socket.gethostbyname(socket.gethostname()), 20202))
@@ -56,8 +54,6 @@ class Client():
                 print(f'Подключен к {ip}:{port}')
                 self.successful_connection = True
             except Exception as e:
-                self.clients_socket[client_index].close()
-                self.clients_socket[client_index] = socket.socket()
                 print(f'Ошибка подключения к {ip}:{port} - {e}')
                 self.successful_connection = False
 
@@ -78,15 +74,16 @@ class Client():
                                 print(f'Клиент {addr[0]} подключен.')
                             else:
                                 print('уже подключен')
-                    except OSError as e:
-                        print(f'cycle {e}')
+                    except OSError:
+                        print('Ошибка при принятии соединения')
+                        break
                 else:
                     break
 
     def get_free_socket_index(self):
         """Ищет и возвращает индекс первого свободного сокета."""
         for index, is_busy in enumerate(self.clients_socket_busy):
-            if not is_busy and index > 0:  # Если сокет не занят
+            if not is_busy:  # Если сокет не занят
                 return index  # Возвращаем индекс свободного сокета
         return None  # Если свободных сокетов нет
 
