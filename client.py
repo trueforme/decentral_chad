@@ -6,6 +6,8 @@ class Client():
         self.max_clients = max_clients
         self.clients_ip = ['' for i in range(self.max_clients)]
         self.clients_socket = [socket.socket() for i in range(self.max_clients)]
+        for sock in self.clients_socket:
+            sock.settimeout(1)
         self.clients_nick = {}
         self.host_socket = socket.socket()
         self.host_socket.bind((socket.gethostbyname(socket.gethostname()),20201))
@@ -35,10 +37,10 @@ class Client():
         if client_index is None:
             print('максимум подключенных')
             return False
-        self.clients_ip[client_index] = ip
         print(client_index,self.clients_ip,port)
         self.clients_socket[client_index].connect((ip, port))
         print('tut')
+        self.clients_ip[client_index] = ip
         self.clients_socket_busy[client_index] = True
         self.clients_nick[self.clients_ip[client_index]] = self.clients_socket[client_index].recv(1024).decode()
         self.clients_socket[client_index].send(self.nickname.encode())
@@ -71,8 +73,7 @@ class Client():
         del self.clients_nick[ip]
 
 class Sender():
-    def __init__(self,socket,my_nick):
-        self.my_nick = my_nick
+    def __init__(self,socket):
         self.socket = socket
         self.reciver = threading.Thread(target=self.get_bytes)
         self.reciver.start()
@@ -80,9 +81,13 @@ class Sender():
         self.non_active = False
     def send_msg(self,msg):
         try:
-            self.socket.sendall((f'{self.my_nick}: ' + msg).encode('utf-8'))
+            self.socket.sendall(msg.encode('utf-8'))
         except ConnectionResetError:
+            self.reciver = None
             self.non_active = True
+        except OSError:
+            None
+
     def get_msg(self,msg):
         self.recived_msgs.append(msg)
     def send_file(self,file_path):
@@ -92,7 +97,10 @@ class Sender():
             with open(file_path,'rb') as file:
                 self.socket.sendall(file.read())
         except ConnectionResetError:
+            self.reciver = None
             self.non_active = True
+        except OSError:
+            None
     def get_file(self,file_name):
         file = self.socket.recv(1024*8*1024)
         with open(file_name,'wb') as f:
@@ -108,4 +116,7 @@ class Sender():
                     decoded_data = data.decode('utf-16')
                     self.get_file(decoded_data)
             except ConnectionResetError:
+                self.reciver = None
                 self.non_active = True
+            except OSError or TimeoutError:
+                None

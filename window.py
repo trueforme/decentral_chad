@@ -4,20 +4,21 @@ from tkinter import ttk, simpledialog, font, filedialog
 import sqlite3
 import client
 
-nickname = ''
-
-
-# Класс для Database Window
+nickname = ""
 class DatabaseWindow:
     def __init__(self, root):
         self.root = root
+        self.root.title("Список контактов")
         self.conn = sqlite3.connect('nick_ip_port.db')
         self.cursor = self.conn.cursor()
         self.nickname = nickname
+        print(self.nickname)
         self.client = client.Client(nickname)
         self.checker = threading.Thread(target=self.client.accept_connection)
         self.checker.start()
         self.chat_windows = {}
+
+
 
         # Создаем новое окно для базы данных
         self.db_frame = tk.Frame(self.root)
@@ -122,7 +123,6 @@ class DatabaseWindow:
         for index, row in enumerate(self.get_all_records()):
             tag = 'evenrow' if index % 2 == 0 else 'oddrow'
             self.tree.insert('', tk.END, values=row, tags=(tag,))
-        self.nickname_label.config(text=f"Ваш ник: {nickname}")
 
 
     def show_context_menu(self, event):
@@ -138,8 +138,11 @@ class DatabaseWindow:
             self.context_menu.unpost()
 
     def open_chat_window(self,ip,socket):
-        chat_window = ChatWindow(self.root,socket)
-        self.chat_windows[ip] = chat_window
+        if ip in self.chat_windows:
+            self.chat_windows[ip].update_sender(socket)
+        else:
+            chat_window = ChatWindow(self.root,socket,self.client.clients_nick[ip])
+            self.chat_windows[ip] = chat_window
 
     # Функция для обработки нажатия кнопки Add User (Database Window)
     def on_add_user(self):
@@ -253,25 +256,27 @@ class DatabaseWindow:
         new_nickname = simpledialog.askstring("", "new nickname:")
         if new_nickname:
             self.set_nickname(new_nickname)
-        self.update_treeview()
+        self.nickname_label.config(text=f"Ваш ник: {nickname}")
 
     def set_nickname(self, new_nickname):
         global nickname
+        with open("nick.txt","w") as f:
+            f.write(new_nickname)
         nickname = new_nickname
+        self.nickname = nickname
 
-    def on_closing(self):
-        self.root.destroy()
-
-# Класс для Chat Window
 class ChatWindow:
-    def __init__(self, root,socket):
+    def __init__(self, root,socket, nick):
         self.root = root
-        self.sender = client.Sender(socket,nickname)
-        self.nickname = nickname  # Изначально никнейм не задан
+        self.nickname = nick
+
+        self.sender = client.Sender(socket)
         self.root.resizable(False, True)
 
         # Настраиваем основную рамку
         self.main_frame = tk.Toplevel(self.root)
+        self.main_frame.title(f"Чат с {self.nickname}")
+        self.main_frame.protocol("WM_DELETE_WINDOW", self.on_close)
 
         # Создаем текстовую область для Chat Window
         self.text_area = tk.Text(self.main_frame, wrap=tk.WORD, height=15,
@@ -315,7 +320,7 @@ class ChatWindow:
         file_path = filedialog.askopenfilename()
         if file_path:
             self.sender.send_file(file_path)
-            # file_name = file_path.split('/')[-1]  # Получаем имя файла
+            # file_name = file_path.split('/')[-1]
             # self.display_text(file_name, self.nickname)
 
     # пишешь епта в строку
@@ -323,26 +328,30 @@ class ChatWindow:
         user_input = self.input_entry.get()
         if user_input:
             self.sender.send_msg(user_input)
-            self.display_text(user_input, 'YOU')
+            self.display_text(user_input, nickname)
 
     # Обработчик, который передает вызов send_text
     def send_text_with_event(self, event):
         self.send_text()
 
-    def display_text(self, text, nickname = ''):
+    def display_text(self, text, nickname):
         self.text_area.config(state=tk.NORMAL)
-        if nickname:
-            self.text_area.insert(tk.END,
+        self.text_area.insert(tk.END,
                               f"{nickname}: {text}\n")
-        else:
-            self.text_area.insert(tk.END,f"{text}\n")
         self.text_area.config(state=tk.DISABLED)
         self.input_entry.delete(0, tk.END)
-    def display_exit_text(self,nick):
+    def display_exit_text(self):
         self.text_area.config(state=tk.NORMAL)
-        self.text_area.insert(f'{nick} покинул чат')
+        self.text_area.insert(tk.END,f'{self.nickname} покинул чат\n')
         self.text_area.config(state=tk.DISABLED)
         self.input_entry.delete(0, tk.END)
+
+    def update_sender(self,socket):
+        self.sender.socket.close()
+        self.sender = client.Sender(socket)
+
+    def on_close(self):
+        self.main_frame.destroy()
 
 
 class WelcomeWindow:
@@ -370,12 +379,13 @@ class WelcomeWindow:
     # Функция проверки поля ввода
     def check_entry(self, event):
         global nickname
-        nickname = self.nickname_entry.get().strip()  # Получаем значение и убираем пробелы
+        nickname = self.nickname_entry.get().strip()
+        with open("nick.txt", "w") as f:
+            f.write(nickname)
         if nickname:  # Если никнейм не пустой
             self.greet_button.config(state=tk.NORMAL)
         else:
             self.greet_button.config(state=tk.DISABLED)
 
     def open_chat_window(self):
-        self.root.destroy()  # Закрываем окно приветствия
-        DatabaseWindow(tk.Tk())  # Открываем окно чата
+        self.root.destroy()
