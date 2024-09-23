@@ -62,7 +62,7 @@ class Client():
                     else:
                         print('уже подключен')
             except OSError:
-                None
+                break
     def close_connection(self):
         self.host_socket.close()
         for socket in self.clients_socket:
