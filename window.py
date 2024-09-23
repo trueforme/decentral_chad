@@ -12,7 +12,6 @@ class DatabaseWindow:
         self.conn = sqlite3.connect('nick_ip_port.db')
         self.cursor = self.conn.cursor()
         self.nickname = nickname
-        print(self.nickname)
         self.client = client.Client(nickname)
         self.checker = threading.Thread(target=self.client.accept_connection)
         self.checker.start()
@@ -264,6 +263,7 @@ class DatabaseWindow:
             f.write(new_nickname)
         nickname = new_nickname
         self.nickname = nickname
+        self.client.nickname = self.nickname
 
 class ChatWindow:
     def __init__(self, root,socket, nick):
