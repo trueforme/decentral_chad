@@ -75,15 +75,14 @@ class Client():
 class Sender():
     def __init__(self,socket):
         self.socket = socket
-        self.reciver = threading.Thread(target=self.get_bytes)
-        self.reciver.start()
+        self.receiver = threading.Thread(target=self.get_bytes)
+        self.receiver.start()
         self.recived_msgs = []
         self.non_active = False
     def send_msg(self,msg):
         try:
             self.socket.sendall(msg.encode('utf-8'))
         except ConnectionResetError:
-            self.reciver = None
             self.non_active = True
         except OSError:
             None
@@ -97,7 +96,6 @@ class Sender():
             with open(file_path,'rb') as file:
                 self.socket.sendall(file.read())
         except ConnectionResetError:
-            self.reciver = None
             self.non_active = True
         except OSError:
             None
@@ -116,7 +114,6 @@ class Sender():
                     decoded_data = data.decode('utf-16')
                     self.get_file(decoded_data)
             except ConnectionResetError:
-                self.reciver = None
                 self.non_active = True
             except OSError or TimeoutError:
                 None

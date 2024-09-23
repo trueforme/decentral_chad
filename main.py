@@ -25,6 +25,3 @@ while True:
             main_window.client.delete_client(ip)
             del main_window.chat_windows[ip]
             break
-
-
-

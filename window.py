@@ -166,8 +166,8 @@ class DatabaseWindow:
             new_window.destroy()
         except TimeoutError:
             label.config(text='не удалось подключиться')
-        except:
-            label.config(text='неккоректные данные')
+        except ConnectionRefusedError:
+            label.config(text='ошибка подключения')
 
 
 
