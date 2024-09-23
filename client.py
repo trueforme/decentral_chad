@@ -92,7 +92,8 @@ class Sender():
             None
 
     def get_msg(self,msg):
-        self.recived_msgs.append(msg)
+        if msg != "":
+            self.recived_msgs.append(msg)
     def send_file(self,file_path):
         try:
             file_name = file_path.split('/')[-1]
