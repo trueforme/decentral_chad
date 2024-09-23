@@ -385,7 +385,8 @@ class ChatWindow:
         self.sender = client.Sender(socket)
 
     def on_close(self):
-        self.main_frame.destroy()
+        self.sender.socket.close()
+        self.sender.non_active = True
 
 
 class WelcomeWindow:

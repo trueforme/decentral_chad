@@ -22,6 +22,7 @@ while main_window.running:
             chat_window.display_text(chat_window.sender.recived_msgs.pop(0),chat_window.nickname)
         if chat_window.sender.non_active:
             chat_window.display_exit_text()
+            chat_window.main_frame.destroy()
             main_window.client.delete_client(ip)
             del main_window.chat_windows[ip]
             break
