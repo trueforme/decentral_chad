@@ -48,20 +48,21 @@ class Client():
 
     def accept_connection(self):
         while True:
-            index = self.get_free_socket_index()
-            if index is not None:
-                conn, addr = self.host_socket.accept()
-                if addr not in self.clients_ip:
-                    self.clients_ip[index] = addr[0]
-                    self.clients_socket[index] = conn
-                    self.clients_socket_busy[index] = True
-                    self.clients_socket[index].send(self.nickname.encode())
-                    self.clients_nick[self.clients_ip[index]] = self.clients_socket[index].recv(1024).decode()
-                    self.connected.append((addr,conn))
-                else:
-                    print('уже подключен')
-            else:
-                break
+            try:
+                index = self.get_free_socket_index()
+                if index is not None:
+                    conn, addr = self.host_socket.accept()
+                    if addr not in self.clients_ip:
+                        self.clients_ip[index] = addr[0]
+                        self.clients_socket[index] = conn
+                        self.clients_socket_busy[index] = True
+                        self.clients_socket[index].send(self.nickname.encode())
+                        self.clients_nick[self.clients_ip[index]] = self.clients_socket[index].recv(1024).decode()
+                        self.connected.append((addr,conn))
+                    else:
+                        print('уже подключен')
+            except OSError:
+                None
     def close_connection(self):
         self.host_socket.close()
         for socket in self.clients_socket:

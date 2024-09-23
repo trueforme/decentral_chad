@@ -254,7 +254,7 @@ class DatabaseWindow:
                 self.add_record(user_nickname, ip, port)
                 window.destroy()
             else:
-                errorwindow = ErrorWindow("wrong IP adress", window)
+                errorwindow = ErrorWindow("несуществующий ip", window)
 
     @staticmethod
     def validate_ipv4(ip):
