@@ -12,7 +12,7 @@ except FileNotFoundError:
 root = tkinter.Tk()
 main_window = win.DatabaseWindow(root)
 
-while True:
+while main_window.running:
     root.update()
     if len(main_window.client.connected):
             ip, socket = main_window.client.connected.pop(0)
@@ -25,3 +25,4 @@ while True:
             main_window.client.delete_client(ip)
             del main_window.chat_windows[ip]
             break
+main_window.client.close_connection()

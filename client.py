@@ -62,7 +62,10 @@ class Client():
                     print('уже подключен')
             else:
                 break
-
+    def close_connection(self):
+        self.host_socket.close()
+        for socket in self.clients_socket:
+                socket.close()
 
     def delete_client(self,ip):
         ind = self.get_ind_by_ip(ip)
