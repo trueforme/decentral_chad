@@ -358,9 +358,10 @@ class WelcomeWindow:
     def __init__(self, root):
         self.root = root
         self.root.title("Welcome Window")
+        self.root.protocol("WM_DELETE_WINDOW", self.on_close)
 
         # Создаем метку с текстом "Здравствуйте!"
-        self.label = tk.Label(self.root, text="Здравствуйте!",
+        self.label = tk.Label(self.root, text="Введите ник",
                               font=("Arial", 16))
         self.label.pack(pady=20)
 
@@ -371,7 +372,7 @@ class WelcomeWindow:
                                  self.check_entry)  # Привязка к событию
 
         # Кнопка "Здравствуйте", пока не активна
-        self.greet_button = tk.Button(self.root, text="Здравствуйте",
+        self.greet_button = tk.Button(self.root, text="Здравствуйте!",
                                       state=tk.DISABLED,
                                       command=self.open_chat_window)
         self.greet_button.pack(pady=10)
@@ -389,3 +390,5 @@ class WelcomeWindow:
 
     def open_chat_window(self):
         self.root.destroy()
+    def on_close(self):
+        return
